@@ -88,6 +88,71 @@ func (scn *Scanner) Scan() bool {
 		return scn.push(tok)
 	}
 
+	if r >= '0' && r <= '9' {
+		r, err = scn.nextRune()
+		if err != nil {
+			return scn.error(err)
+		}
+
+		// 0x01 - disable hexadecimal
+		// 0x02 - is leading zero
+		// 0x04 - is hexadecimal
+		// 0x08 - is fraction
+		// 0x10 - is exponent
+		// 0x20 - disable sign
+		// 0x40 - incomplete
+		var flags int
+
+		var runes []rune
+	loop:
+		for {
+			switch {
+			case flags&0x01 == 0x00 && r == '0':
+				flags |= 0x02
+			case flags&0x01 == 0x00 && (r == 'x' || r == 'X'):
+				flags |= 0x04
+			case r >= '0' && r <= '9', flags&0x04 == 0x04 && ((r >= 'A' && r <= 'F') || (r >= 'a' && r <= 'f')):
+				flags |= 0x21
+				flags &= ^0x40
+			case flags&0x08 == 0x00 && r == '.':
+				flags |= 0x09
+			case flags&0x14 == 0x00 && (r == 'e' || r == 'E'),
+				flags&0x14 == 0x04 && (r == 'p' || r == 'P'):
+				flags |= 0x58
+				flags &= ^0x20
+			case flags&0x30 == 0x10 && (r == '-' || r == '+'):
+				flags |= 0x60
+			default:
+				break loop
+			}
+
+			runes = append(runes, r)
+
+			r, err = scn.nextRune()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return scn.error(err)
+			}
+		}
+
+		if flags&0x40 == 0x40 {
+			return scn.error(errors.New("malformed number"))
+		}
+
+		if err == nil {
+			err = scn.unreadRune()
+			if err != nil {
+				return scn.error(err)
+			}
+		}
+
+		scn.Text = string(runes)
+
+		return scn.push(token.Numeral)
+	}
+
 	r, err = scn.nextRune()
 	if err != nil {
 		return scn.error(err)

@@ -14,6 +14,6 @@ func TestScan(t *testing.T) {
 		if err := scn.Err(); err != nil {
 			t.Fatalf("error: %v", err)
 		}
-		t.Logf("%#v", source[scn.Start:scn.End])
+		t.Logf("%s: %#v", scn.Token, source[scn.Start:scn.End])
 	}
 }

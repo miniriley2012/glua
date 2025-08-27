@@ -76,7 +76,7 @@ func (scn *Scanner) Scan() bool {
 			}
 		}
 
-		return scn.push(token.Identifier)
+		return scn.push(token.Name)
 	}
 
 	return scn.error(errors.ErrUnsupported)

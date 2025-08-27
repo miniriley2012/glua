@@ -26,6 +26,7 @@ type Scanner struct {
 	Token token.Token
 	Start int
 	End   int
+	Text  string
 }
 
 func (scn *Scanner) Err() error {
@@ -78,7 +79,8 @@ func (scn *Scanner) Scan() bool {
 			}
 		}
 
-		tok, found := keywords[string(runes)]
+		scn.Text = string(runes)
+		tok, found := keywords[scn.Text]
 		if !found {
 			tok = token.Name
 		}
